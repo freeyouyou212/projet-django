@@ -7,8 +7,10 @@
 </div>
 
 <div class="card">
+  <div class="card-header">
+      {{ offer.title }}
+  </div>
   <div class="card-body">
-    <h1 class="h4">{{ offer.title }}</h1>
     <h2 class="h6 text-muted mb-3">{{ offer.organization }}</h2>
 
     <p class="mb-1"><strong>Contact :</strong> {{ offer.contact_name }} ({{ offer.contact_email }})</p>
@@ -22,69 +24,49 @@
     <h5>Détails du stage</h5>
     <p>{{ offer.details|linebreaks }}</p>
 
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-
-    <!-- ============================================== -->
-    <!--         BOUTONS POUR LE RESPONSABLE / ADMIN     -->
-    <!-- ============================================== -->
-
     {% if user.is_authenticated and user.is_staff %}
       <hr>
       <h5>Actions responsable / admin</h5>
-      <p>
-        Statut actuel :
-        <span class="badge bg-secondary">{{ offer.get_status_display }}</span>
-      </p>
-
       <div class="btn-group" role="group">
         <a href="{% url 'offers:offer_set_status' offer.pk 'validated' %}"
-           class="btn btn-outline-success btn-sm">
+           class="btn btn-success btn-sm">
           Valider
         </a>
 
         <a href="{% url 'offers:offer_set_status' offer.pk 'rejected' %}"
-           class="btn btn-outline-danger btn-sm">
+           class="btn btn-danger btn-sm">
           Refuser
         </a>
 
         <a href="{% url 'offers:offer_set_status' offer.pk 'closed' %}"
-           class="btn btn-outline-secondary btn-sm">
+           class="btn btn-secondary btn-sm">
           Clôturer
         </a>
       </div>
-
       <p class="mt-2">
         <a href="{% url 'offers:offer_pending_list' %}">← Retour aux offres en attente</a>
       </p>
     {% endif %}
 
-    <!-- ============================================== -->
-    <!--         PARTIE POUR LES ETUDIANTS (CANDIDATURE) -->
-    <!-- ============================================== -->
-
     {% if user.is_authenticated and not user.is_staff %}
       {% if can_apply %}
         <a href="{% url 'offers:offer_apply' offer.pk %}" class="btn btn-success mt-3">
-          Candidater à cette offre
+            Candidater à cette offre
         </a>
       {% else %}
-        <p class="mt-3 text-muted">
-          Cette offre n'est plus ouverte aux candidatures.
-        </p>
+        <div class="alert alert-warning mt-3">
+          <h5 class="alert-heading">Candidatures fermées</h5>
+          <p class="mb-0">
+             Cette offre a atteint son quota de candidats ou a été clôturée.
+          </p>
+        </div>
       {% endif %}
     {% endif %}
 
     {% if not user.is_authenticated and can_apply %}
       <p class="mt-3">
-        <a href="{% url 'accounts:login' %}?next={% url 'offers:offer_apply' offer.pk %}">
-          Connectez-vous pour candidater.
+        <a href="{% url 'login' %}?next={% url 'offers:offer_apply' offer.pk %}" class="btn btn-primary">
+          Connectez-vous pour candidater
         </a>
       </p>
     {% endif %}

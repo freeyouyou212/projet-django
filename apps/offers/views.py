@@ -12,13 +12,16 @@ def offer_list(request):
     """
     Page d'accueil : liste des offres.
     - Staff : voit toutes les offres.
-    - Autres (Étudiants/Anonymes) : voient seulement les offres validées.
+    - Autres : voient SEULEMENT les offres validées (pas les clôturées).
     """
     q = request.GET.get("q", "").strip()
 
     if request.user.is_authenticated and request.user.is_staff:
         offers = InternshipOffer.objects.all()
     else:
+        # --- CORRECTION STRICTE ---
+        # Le cahier des charges dit : "n’apparaît plus dans la liste des offres en cours"
+        # On ne sélectionne donc QUE 'validated'.
         offers = InternshipOffer.objects.filter(status="validated")
 
     if q:
@@ -28,7 +31,6 @@ def offer_list(request):
             | models.Q(details__icontains=q)
         )
 
-    # Tri par date décroissante
     offers = offers.order_by('-submission_date')
 
     return render(
@@ -44,20 +46,21 @@ def offer_list(request):
 def offer_detail(request, pk):
     """
     Détail d'une offre.
-    ACCÈS : Public (Anonyme, Étudiant, Admin).
-    CANDIDATURE : Réservée aux étudiants connectés.
     """
     offer = get_object_or_404(InternshipOffer, pk=pk)
 
-    # Sécurité : Si l'offre n'est pas validée, elle est invisible pour
-    # les anonymes et les étudiants (comme s'ils devinaient l'URL)
-    if offer.status != 'validated' and not (request.user.is_authenticated and request.user.is_staff):
+    # Sécurité : 
+    # On autorise 'validated' ET 'closed' pour que l'étudiant qui vient de prendre
+    # la 5ème place ne tombe pas sur une erreur 404 après sa redirection.
+    visible_statuses = ['validated', 'closed']
+    
+    is_staff = request.user.is_authenticated and request.user.is_staff
+    
+    # Si l'offre est en attente ou rejetée, et qu'on n'est pas staff -> 404
+    if offer.status not in visible_statuses and not is_staff:
         raise Http404("Cette offre n'est pas disponible.")
 
-    # Logique pour le bouton "Postuler" :
-    # 1. L'offre doit être ouverte (validée + quota non atteint)
-    # 2. L'utilisateur doit être connecté
-    # 3. L'utilisateur ne doit pas être un Admin (optionnel mais logique)
+    # Logique pour le bouton "Postuler"
     is_student = request.user.is_authenticated and not request.user.is_staff
     can_apply = offer.is_open_for_applications and is_student
 
@@ -70,14 +73,7 @@ def offer_detail(request, pk):
 
 
 def offer_create(request):
-    """
-    Dépôt d'offre.
-    ACCÈS :
-    - Autorisé aux non-connectés (Entreprises)
-    - Autorisé aux Admins/Staff
-    - Interdit aux étudiants connectés
-    """
-    # Si l'utilisateur est connecté MAIS n'est pas staff (donc étudiant) -> BLOQUER
+    # Si l'utilisateur est connecté MAIS n'est pas staff -> BLOQUER
     if request.user.is_authenticated and not request.user.is_staff:
         messages.info(request, "Espace étudiant : vous ne pouvez pas déposer d'offres de stage.")
         return redirect("offers:offer_list")
@@ -86,16 +82,14 @@ def offer_create(request):
         form = OfferForm(request.POST)
         if form.is_valid():
             offer = form.save(commit=False)
-            offer.status = "pending"  # Toujours en attente par défaut
+            offer.status = "pending"
             offer.save()
             
             messages.success(request, "L'offre a bien été déposée et sera examinée prochainement.")
 
-            # Si c'est un Admin, il peut voir le détail (même si pending)
             if request.user.is_authenticated and request.user.is_staff:
                 return redirect("offers:offer_detail", pk=offer.pk)
             
-            # Si c'est une Entreprise (non connecté), retour liste (car l'offre pending est invisible)
             return redirect("offers:offer_list")
     else:
         form = OfferForm()
@@ -109,13 +103,9 @@ def offer_create(request):
 
 @login_required
 def offer_apply(request, pk):
-    """
-    Traitement de la candidature (Action).
-    Nécessite d'être connecté.
-    """
     offer = get_object_or_404(InternshipOffer, pk=pk)
 
-    # Vérification si l'offre accepte les candidatures
+    # Offre encore ouverte ?
     if not offer.is_open_for_applications:
         messages.error(request, "Cette offre n'est plus ouverte aux candidatures.")
         return redirect("offers:offer_detail", pk=offer.pk)
@@ -123,7 +113,7 @@ def offer_apply(request, pk):
     if request.method == "POST":
         form = ApplicationForm(request.POST)
         if form.is_valid():
-            # Double vérification du quota
+            # 1. Vérif quota avant sauvegarde
             if offer.applications.count() >= 5:
                 offer.status = "closed"
                 offer.save(update_fields=["status"])
@@ -133,7 +123,6 @@ def offer_apply(request, pk):
             application = form.save(commit=False)
             application.offer = offer
 
-            # Pré-remplissage auto
             if request.user.is_authenticated:
                 application.student_name = request.user.get_full_name() or request.user.username
                 application.student_email = request.user.email
@@ -144,7 +133,7 @@ def offer_apply(request, pk):
                 messages.error(request, "Erreur : Vous avez déjà candidaté à cette offre.")
                 return redirect("offers:offer_detail", pk=offer.pk)
 
-            # Clôture automatique si quota atteint après sauvegarde
+            # 2. Re-vérification quota APRÈS sauvegarde pour fermer l'offre immédiatement
             if offer.applications.count() >= 5:
                 offer.status = "closed"
                 offer.save(update_fields=["status"])
@@ -174,7 +163,6 @@ def staff_required(user):
 @login_required
 @user_passes_test(staff_required)
 def offer_pending_list(request):
-    """Liste des offres en attente (Admin)."""
     offers = InternshipOffer.objects.filter(status="pending").order_by("-submission_date")
     return render(request, "offers/offer_pending_list.html", {"offers": offers})
 
@@ -182,7 +170,6 @@ def offer_pending_list(request):
 @login_required
 @user_passes_test(staff_required)
 def offer_set_status(request, pk, status):
-    """Changer le statut d'une offre (Admin)."""
     offer = get_object_or_404(InternshipOffer, pk=pk)
 
     allowed_statuses = {"pending", "validated", "rejected", "closed"}
@@ -202,7 +189,6 @@ def offer_set_status(request, pk, status):
 
 @login_required
 def my_applications(request):
-    """Mes candidatures (Étudiant)."""
     applications = Application.objects.filter(
         student_email=request.user.email
     ).select_related("offer").order_by("-application_date")
