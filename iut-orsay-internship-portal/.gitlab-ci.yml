@@ -1,0 +1,25 @@
+image: python:3.9
+
+stages:
+  - test
+  - deploy
+
+variables:
+  DJANGO_SETTINGS_MODULE: "iut_portal.settings"
+  PYTHONPATH: "$PYTHONPATH:/builds/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+
+before_script:
+  - pip install -r requirements.txt
+
+test:
+  stage: test
+  script:
+    - python manage.py test
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying to production server..."
+    # Add your deployment commands here
+  only:
+    - main
