@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Offres de stage — IUT{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h1 class="h3 mb-0">Offres de stage</h1>
+  <div class="d-flex gap-2">
+    <form class="d-flex" method="get">
+      <input
+        type="text"
+        name="q"
+        class="form-control form-control-sm me-2"
+        placeholder="Rechercher une offre..."
+        value="{{ query|default:'' }}"
+      >
+      <button class="btn btn-outline-primary btn-sm" type="submit">Rechercher</button>
+    </form>
+    <a href="{% url 'offers:offer_create' %}" class="btn btn-success btn-sm">
+      Déposer une offre
+    </a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if offers %}
+  <div class="row g-3">
+    {% for offer in offers %}
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ offer.title }}</h5>
+            <h6 class="card-subtitle mb-2 text-muted">{{ offer.organization }}</h6>
+            <p class="card-text small text-muted mb-2">
+              Publiée le {{ offer.submission_date|date:"d/m/Y H:i" }}
+            </p>
+            <p class="card-text flex-grow-1">
+              {{ offer.details|truncatechars:150 }}
+            </p>
+            <p class="card-text mb-2">
+              <span class="badge bg-secondary">
+                {{ offer.get_status_display }}
+              </span>
+              <span class="badge bg-info text-dark">
+                {{ offer.applications_count }} candidature(s)
+              </span>
+            </p>
+            <a href="{% url 'offers:offer_detail' offer.pk %}" class="btn btn-primary mt-auto">
+              Détails
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  {% if query %}
+    <p>Aucune offre ne correspond à votre recherche "<strong>{{ query }}</strong>".</p>
+  {% else %}
+    <p>Aucune offre pour le moment.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}
