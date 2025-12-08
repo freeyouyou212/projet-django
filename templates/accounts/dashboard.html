@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h2 class="mb-3">Dashboard</h2>
+
+{% if is_staff %}
+  <h5>All offers</h5>
+  <div class="list-group mb-3">
+    {% for offer in offers %}
+      <a href="{% url 'offers:offer_detail' offer.id %}" class="list-group-item list-group-item-action">
+        {{ offer.title }} — {{ offer.organization }} <span class="text-muted small">({{ offer.get_status_display }})</span>
+      </a>
+    {% empty %}
+      <div class="list-group-item">No offers yet.</div>
+    {% endfor %}
+  </div>
+{% else %}
+  <h5>Your applications (matched by email)</h5>
+  <div class="list-group">
+    {% for app in applications %}
+      <div class="list-group-item">
+        {{ app.student_name }} → <a href="{% url 'offers:offer_detail' app.offer.id %}">{{ app.offer.title }}</a>
+        <div class="small text-muted">{{ app.application_date|date:"SHORT_DATE_FORMAT" }}</div>
+      </div>
+    {% empty %}
+      <div class="list-group-item">No applications found for your email.</div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% endblock %}

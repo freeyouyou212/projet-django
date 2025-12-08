@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Candidature — {{ offer.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="{% url 'offers:offer_detail' offer.pk %}" class="btn btn-link">&larr; Retour à l'offre</a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h1 class="h4 mb-3">Candidater à : {{ offer.title }}</h1>
+    <p class="text-muted">
+      {{ offer.organization }} — {{ offer.submission_date|date:"d/m/Y" }}
+    </p>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-3">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+          {% endif %}
+          {% for err in field.errors %}
+            <div class="text-danger small">{{ err }}</div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-success">Envoyer ma candidature</button>
+      <a href="{% url 'offers:offer_detail' offer.pk %}" class="btn btn-secondary">Annuler</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

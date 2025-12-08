@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Offres en attente{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Offres en attente de validation</h1>
+</div>
+
+{% if offers %}
+  <div class="list-group">
+    {% for offer in offers %}
+      <a href="{% url 'offers:offer_detail' offer.pk %}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ offer.title }}</h5>
+          <small class="text-muted">{{ offer.submission_date|date:"d/m/Y H:i" }}</small>
+        </div>
+        <p class="mb-1">{{ offer.organization }}</p>
+        <small class="text-muted">{{ offer.contact_name }} — {{ offer.contact_email }}</small>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <p>Aucune offre en attente.</p>
+{% endif %}
+{% endblock %}
