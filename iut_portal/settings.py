@@ -30,10 +30,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.accounts',
-    'apps.offers',
-    'apps.api',
-    'apps.dashboard',  # <--- AJOUT ICI
+    'accounts',
+    'offers',
+    'api',
+    'dashboard',  # <--- AJOUT ICI
     'rest_framework',
 ]
 
