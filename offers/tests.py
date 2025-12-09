@@ -61,5 +61,5 @@ class OfferViewTest(TestCase):
             'details': 'This is a new internship offer.',
             'status': 'en attente validation'
         })
-        self.assertEqual(response.status_code, 302)  # Redirect after successful creation
+        self.assertEqual(response.status_code, 302)  
         self.assertTrue(Offer.objects.filter(title='New Internship').exists())

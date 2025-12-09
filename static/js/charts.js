@@ -1,14 +1,13 @@
-// This file contains JavaScript code for rendering charts using Chart.js.
 
 document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('myChart').getContext('2d');
     const myChart = new Chart(ctx, {
-        type: 'bar', // Change this to 'line', 'pie', etc. as needed
+        type: 'bar', 
         data: {
             labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
             datasets: [{
                 label: 'Number of Offers',
-                data: [12, 19, 3, 5, 2, 3, 7], // Replace with dynamic data as needed
+                data: [12, 19, 3, 5, 2, 3, 7], 
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.2)',
                     'rgba(54, 162, 235, 0.2)',

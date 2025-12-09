@@ -19,9 +19,7 @@ def offer_list(request):
     if request.user.is_authenticated and request.user.is_staff:
         offers = InternshipOffer.objects.all()
     else:
-        # --- CORRECTION STRICTE ---
-        # Le cahier des charges dit : "n’apparaît plus dans la liste des offres en cours"
-        # On ne sélectionne donc QUE 'validated'.
+
         offers = InternshipOffer.objects.filter(status="validated")
 
     if q:
@@ -49,18 +47,16 @@ def offer_detail(request, pk):
     """
     offer = get_object_or_404(InternshipOffer, pk=pk)
 
-    # Sécurité : 
-    # On autorise 'validated' ET 'closed' pour que l'étudiant qui vient de prendre
-    # la 5ème place ne tombe pas sur une erreur 404 après sa redirection.
+
     visible_statuses = ['validated', 'closed']
     
     is_staff = request.user.is_authenticated and request.user.is_staff
     
-    # Si l'offre est en attente ou rejetée, et qu'on n'est pas staff -> 404
+
     if offer.status not in visible_statuses and not is_staff:
         raise Http404("Cette offre n'est pas disponible.")
 
-    # Logique pour le bouton "Postuler"
+
     is_student = request.user.is_authenticated and not request.user.is_staff
     can_apply = offer.is_open_for_applications and is_student
 
@@ -73,7 +69,7 @@ def offer_detail(request, pk):
 
 
 def offer_create(request):
-    # Si l'utilisateur est connecté MAIS n'est pas staff -> BLOQUER
+
     if request.user.is_authenticated and not request.user.is_staff:
         messages.info(request, "Espace étudiant : vous ne pouvez pas déposer d'offres de stage.")
         return redirect("offers:offer_list")
@@ -105,7 +101,7 @@ def offer_create(request):
 def offer_apply(request, pk):
     offer = get_object_or_404(InternshipOffer, pk=pk)
 
-    # Offre encore ouverte ?
+
     if not offer.is_open_for_applications:
         messages.error(request, "Cette offre n'est plus ouverte aux candidatures.")
         return redirect("offers:offer_detail", pk=offer.pk)
@@ -113,7 +109,7 @@ def offer_apply(request, pk):
     if request.method == "POST":
         form = ApplicationForm(request.POST)
         if form.is_valid():
-            # 1. Vérif quota avant sauvegarde
+
             if offer.applications.count() >= 5:
                 offer.status = "closed"
                 offer.save(update_fields=["status"])
@@ -133,7 +129,7 @@ def offer_apply(request, pk):
                 messages.error(request, "Erreur : Vous avez déjà candidaté à cette offre.")
                 return redirect("offers:offer_detail", pk=offer.pk)
 
-            # 2. Re-vérification quota APRÈS sauvegarde pour fermer l'offre immédiatement
+
             if offer.applications.count() >= 5:
                 offer.status = "closed"
                 offer.save(update_fields=["status"])

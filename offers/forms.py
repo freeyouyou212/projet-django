@@ -8,7 +8,6 @@ class OfferForm(forms.ModelForm):
     class Meta:
         model = InternshipOffer
         fields = ["title", "organization", "contact_name", "contact_email", "details"]
-        # statut non modifiable ici → forcer "pending" dans la vue
 
 
 class ApplicationForm(forms.ModelForm):

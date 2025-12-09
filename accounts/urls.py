@@ -6,5 +6,5 @@ app_name = 'accounts'
 urlpatterns = [
     path('signup/', views.signup, name='signup'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('logout/', views.logout_view, name='logout'),  # <--- AJOUT
+    path('logout/', views.logout_view, name='logout'), 
 ]
