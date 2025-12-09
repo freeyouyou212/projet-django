@@ -1,30 +1,3 @@
-
-function submitApplication(offerId) {
-    const applicationData = {
-        offer_id: offerId,
-    };
-
-    fetch(`/api/applications/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken'), 
-        },
-        body: JSON.stringify(applicationData),
-    })
-    .then(response => {
-        if (response.ok) {
-            alert('Application submitted successfully!');
-        } else {
-            alert('Failed to submit application. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again later.');
-    });
-}
-
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
